@@ -1,5 +1,6 @@
-package com.example.webviewtest
+package com.myshhutest.webviewtest
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -7,10 +8,8 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.Settings
 import android.view.KeyEvent
-import android.view.MotionEvent
-import android.view.View
-import android.webkit.JavascriptInterface
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -22,10 +21,12 @@ class MainActivity : AppCompatActivity() {
         ActivityHolder.activity = this
 
         manageWebView()
-        startWidget()
 
-        if (!isOverlayPermissionGranted()) {
-            openOverlayPermissionWindow()
+
+        if (isOverlayPermissionDenied()) {
+            showOverlayPermissionDialog()
+        } else {
+            startWidget()
         }
     }
 
@@ -40,12 +41,10 @@ class MainActivity : AppCompatActivity() {
         this.startService(floatingPlayerServiceIntent)
     }
 
-    private fun isOverlayPermissionGranted(): Boolean {
-        return !(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this))
-    }
+    private fun isOverlayPermissionDenied() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)
 
     private fun openOverlayPermissionWindow() {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                 Uri.parse("package:$packageName")
@@ -54,13 +53,50 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == 0) {
+            if (isOverlayPermissionDenied()) {
+                showOverlayPermissionDialog()
+            } else {
+                startWidget()
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    private fun showOverlayPermissionDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Give permissions")
+        builder.setMessage("Application don't have permissions to draw overlays that is needed for Floating Player, from where "
+                + "you can take photos. Click 'Ok' and in next window give this application needed permissions.")
+
+        builder.setPositiveButton("Ok") { _, _ ->
+            openOverlayPermissionWindow()
+        }
+
+        builder.setOnCancelListener {
+            if(isOverlayPermissionDenied()) {
+                createOverlayNotAvailableToast()
+                finish()
+            }
+        }
+
+        builder.show()
+    }
+
+    private fun createOverlayNotAvailableToast() {
+        makeToast("Draw over other app permission not available. Please give needed permissions for app to work.")
+    }
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (event?.action ?: 0 == KeyEvent.ACTION_DOWN) {
             when (keyCode) {
                 KeyEvent.KEYCODE_BACK -> {
                     if (myWebView.canGoBack()) {
-                        //makeToast(myWebView.url)
                         myWebView.goBack()
+                    } else {
+                        finish()
                     }
                     return true
                 }

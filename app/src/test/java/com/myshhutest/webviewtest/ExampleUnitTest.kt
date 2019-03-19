@@ -1,4 +1,4 @@
-package com.example.webviewtest
+package com.myshhutest.webviewtest
 
 import org.junit.Test
 

@@ -1,4 +1,4 @@
-package com.example.webviewtest
+package com.myshhutest.webviewtest
 
 import android.content.Context
 import android.content.Intent

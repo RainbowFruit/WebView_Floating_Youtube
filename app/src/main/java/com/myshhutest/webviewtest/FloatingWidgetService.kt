@@ -1,4 +1,4 @@
-package com.example.webviewtest
+package com.myshhutest.webviewtest
 
 import android.annotation.SuppressLint
 import android.app.*
