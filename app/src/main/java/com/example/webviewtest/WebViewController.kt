@@ -3,11 +3,11 @@ package com.example.webviewtest
 import android.content.Context
 import android.content.Intent
 import android.os.Handler
-import android.webkit.*
-import android.widget.Toast
 import android.os.Looper
-import java.lang.Exception
-import java.util.*
+import android.webkit.WebResourceResponse
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.Toast
 
 
 class WebViewController(private val context: Context, private val webView: WebView) : WebViewClient() {
@@ -44,8 +44,9 @@ class WebViewController(private val context: Context, private val webView: WebVi
 
     private fun switchVideo(currentUrl: String) {
         if (currentUrl.contains("list")) {
-            val listId: String? = getListId(currentUrl)
             playVideo(getVideoId(currentUrl), getListId(currentUrl))
+        } else {
+            playVideo(getVideoId(currentUrl))
         }
         oldUrl = currentUrl
     }
@@ -80,7 +81,7 @@ class WebViewController(private val context: Context, private val webView: WebVi
         }
     }
 
-    private fun playVideo(videoId: String, listId: String?) {
+    private fun playVideo(videoId: String, listId: String? = null) {
         if (videoId != "") {
             floatingPlayerServiceIntent = Intent(context, FloatingWidgetService::class.java)
             floatingPlayerServiceIntent?.putExtra("videoId", videoId)
