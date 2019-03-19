@@ -36,6 +36,7 @@ class VideosQueue(private val chosenVideoId: String, private val listId: String?
         } else {
             createListFromListId()
         }
+        addCurrentPlayingVideoToQueue()
     }
 
     private fun createListFromListId() {
@@ -47,7 +48,6 @@ class VideosQueue(private val chosenVideoId: String, private val listId: String?
         val query = createQueryFromTitle()
         println("query is $query")
         videoIdsInQueue = getVideosIdsFromQuery(query)
-        addCurrentPlayingVideoToQueue()
     }
 
     private fun getChosenVideoTitle(chosenVideoId: String): String {
