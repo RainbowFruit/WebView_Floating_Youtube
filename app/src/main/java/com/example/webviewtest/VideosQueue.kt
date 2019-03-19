@@ -47,7 +47,7 @@ class VideosQueue(private val chosenVideoId: String, private val listId: String?
         val query = createQueryFromTitle()
         println("query is $query")
         videoIdsInQueue = getVideosIdsFromQuery(query)
-        videoIdsInQueue.add(0, chosenVideoId)
+        addCurrentPlayingVideoToQueue()
     }
 
     private fun getChosenVideoTitle(chosenVideoId: String): String {
@@ -190,6 +190,12 @@ class VideosQueue(private val chosenVideoId: String, private val listId: String?
     private fun changeCurrentAPIKEYToNext() {
         apiKey = apiKeysArray[++currentAPIKEY]
         Log.d("AppInfo", "Changed key to $currentAPIKEY")
+    }
+
+    private fun addCurrentPlayingVideoToQueue() {
+        if(videoIdsInQueue[0] != chosenVideoId) {
+            videoIdsInQueue.add(0, chosenVideoId)
+        }
     }
 
     fun getNextVideo(): String {
