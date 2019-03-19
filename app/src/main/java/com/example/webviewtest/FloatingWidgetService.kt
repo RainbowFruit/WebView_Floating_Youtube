@@ -15,8 +15,10 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.YouTubePlayerListener
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 
 
@@ -25,7 +27,8 @@ class FloatingWidgetService : Service() {
     private lateinit var floatingView: View
     private var layoutParams: WindowManager.LayoutParams? = null
     private var mWindowManager: WindowManager? = null
-    private  var youTubePlayer: YouTubePlayer? = null
+    private var youTubePlayer: YouTubePlayer? = null
+    private var videosQueue: VideosQueue? = null
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -144,8 +147,8 @@ class FloatingWidgetService : Service() {
         setButtonMoveOnTouchListener()
         setButtonGoToPlayerOnClickListener()
         setButtonCloseOnClickListener()
+        setYoutubePlayerEventsListener()
     }
-
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setButtonResizeOnTouchListener() {
@@ -182,7 +185,7 @@ class FloatingWidgetService : Service() {
     private fun setButtonMoveOnTouchListener() {
         val btnMove: Button = floatingView.findViewById(R.id.btnMove)
 
-        btnMove.setOnTouchListener(object : View.OnTouchListener{
+        btnMove.setOnTouchListener(object : View.OnTouchListener {
 
             var initialX: Int = 0
             var initialY: Int = 0
@@ -224,7 +227,7 @@ class FloatingWidgetService : Service() {
                     }
                 }
                 timeAfterTouch = System.currentTimeMillis() - startTime
-                if(timeAfterTouch > 1000 && !widgetMoved) {
+                if (timeAfterTouch > 1000 && !widgetMoved) {
                     //stopSelf()
                 }
                 return false
@@ -235,7 +238,7 @@ class FloatingWidgetService : Service() {
     private fun setButtonGoToPlayerOnClickListener() {
         val btnGoToPlayer: Button = floatingView.findViewById(R.id.btnGoToPlayer)
         btnGoToPlayer.setOnClickListener {
-            startActivity(ActivityHolder.activity?.intent)
+            startActivity(ActivityHolder.activity?.intent?.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
         }
     }
 
@@ -246,11 +249,58 @@ class FloatingWidgetService : Service() {
         }
     }
 
+    private fun setYoutubePlayerEventsListener() {
+        val youTubePlayerListener = object : YouTubePlayerListener {
+
+            override fun onStateChange(youTubePlayer: YouTubePlayer, playerState: PlayerConstants.PlayerState) {
+                if (playerState == PlayerConstants.PlayerState.ENDED) {
+                    val nextVideoId: String = videosQueue?.getNextVideo() ?: ""
+                    youTubePlayer.loadVideo(nextVideoId, 0f)
+                }
+            }
+
+            override fun onError(youTubePlayer: YouTubePlayer, error: PlayerConstants.PlayerError) {
+            }
+
+            override fun onPlaybackQualityChange(
+                youTubePlayer: YouTubePlayer,
+                playbackQuality: PlayerConstants.PlaybackQuality
+            ) {
+            }
+
+            override fun onPlaybackRateChange(
+                youTubePlayer: YouTubePlayer,
+                playbackRate: PlayerConstants.PlaybackRate
+            ) {
+            }
+
+            override fun onReady(youTubePlayer: YouTubePlayer) {
+            }
+
+            override fun onVideoDuration(youTubePlayer: YouTubePlayer, duration: Float) {
+            }
+
+            override fun onVideoId(youTubePlayer: YouTubePlayer, videoId: String) {
+            }
+
+            override fun onVideoLoadedFraction(youTubePlayer: YouTubePlayer, loadedFraction: Float) {
+            }
+
+            override fun onCurrentSecond(youTubePlayer: YouTubePlayer, second: Float) {
+            }
+
+            override fun onApiChange(youTubePlayer: YouTubePlayer) {
+            }
+        }
+        youTubePlayer?.addListener(youTubePlayerListener)
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val extras = intent?.extras
         if (extras != null) { //Check if widget is started for video to play
             setWidgetVisibilityToVisible()
             loadVideoFromExtrasVideoId(extras)
+            createNextVideosQueue(extras)
         }
         return super.onStartCommand(intent, flags, startId)
     }
@@ -266,16 +316,20 @@ class FloatingWidgetService : Service() {
             youTubePlayer?.loadVideo(videoId, 0f)
         } else {
             waitForPlayerToInitAndPlayVideo(videoId)
-        }    }
+        }
+    }
 
     private fun waitForPlayerToInitAndPlayVideo(videoId: String) {
         Thread {
-            while(youTubePlayer == null);
+            while (youTubePlayer == null);
             youTubePlayer?.loadVideo(videoId, 0f)
         }.start()
     }
 
-
+    private fun createNextVideosQueue(extras: Bundle) {
+        val videoId = extras.getString("videoId", "")
+        videosQueue = VideosQueue(videoId, 9)
+    }
 
     override fun onDestroy() {
         super.onDestroy()

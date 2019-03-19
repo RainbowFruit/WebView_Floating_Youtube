@@ -2,7 +2,6 @@ package com.example.webviewtest
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import android.os.Handler
 import android.webkit.*
 import android.widget.Toast
@@ -24,13 +23,24 @@ class WebViewController(private val context: Context, private val webView: WebVi
     override fun shouldInterceptRequest(view: WebView?, url: String?): WebResourceResponse? {
         val handler = Handler(Looper.getMainLooper())
         handler.post {
-            if (oldUrl != webView.url) {
-                println("url changed from $oldUrl to ${url}, videoId: ${getVideoId(webView.url)}")
-                playVideo(getVideoId(webView.url))
-                oldUrl = webView.url
+            var currentUrl: String = webView.url
+            currentUrl = clearUrl(currentUrl)
+
+            if (oldUrl != currentUrl) {
+                println("url changed from $oldUrl to $currentUrl, url: $url, videoId: ${getVideoId(currentUrl)}")
+                playVideo(getVideoId(currentUrl))
+                oldUrl = currentUrl
             }
         }
         return super.shouldInterceptRequest(view, url)
+    }
+
+    private fun clearUrl(currentUrl: String): String {
+        var clearedUrl: String = currentUrl
+        if(currentUrl.contains("#searching")) {
+            clearedUrl = currentUrl.replace("#searching", "")
+        }
+        return clearedUrl
     }
 
     private fun showToast(text: String) {
