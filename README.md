@@ -4,6 +4,13 @@ Java project at: https://github.com/Myshhu/YoutubeApp
 Main goal of this app is to play video from Youtube by widget when it is in background.
 You can do everything you want at phone while listening to music from Youtube.
 
+#### Features:
+- All Youtube features
+- Play videos at widget when doing other tasks on phone
+- Resize widget
+- Go back to app by clicking notification or "Player" button
+- Close widget at anytime
+
 #### Sample screenshots:
 
 Sized down widget in app | Expanded widget in the background | Playing music - Expanded widget in app
