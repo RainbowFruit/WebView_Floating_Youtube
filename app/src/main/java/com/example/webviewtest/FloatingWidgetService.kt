@@ -2,8 +2,10 @@ package com.example.webviewtest
 
 import android.annotation.SuppressLint
 import android.app.*
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.Build
@@ -42,10 +44,11 @@ class FloatingWidgetService : Service() {
         createLayoutParams()
         createWindowManager()
         addFloatingViewToWindowManager()
-
-        getYouTubePlayer()
+        getYouTubePlayerAndSetListener()
 
         setViewItemsListeners()
+
+        registerScreenStatusReceiver()
     }
 
     private fun createNotification() {
@@ -133,11 +136,12 @@ class FloatingWidgetService : Service() {
         mWindowManager?.addView(floatingView, layoutParams)
     }
 
-    private fun getYouTubePlayer() {
+    private fun getYouTubePlayerAndSetListener() {
         val youTubePlayerView: YouTubePlayerView = floatingView.findViewById(R.id.ytPlayerView)
         youTubePlayerView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
             override fun onReady(youTubePlayer: YouTubePlayer) {
                 this@FloatingWidgetService.youTubePlayer = youTubePlayer
+                setYoutubePlayerEventsListener()
             }
         })
     }
@@ -147,7 +151,6 @@ class FloatingWidgetService : Service() {
         setButtonMoveOnTouchListener()
         setButtonGoToPlayerOnClickListener()
         setButtonCloseOnClickListener()
-        setYoutubePlayerEventsListener()
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -170,6 +173,9 @@ class FloatingWidgetService : Service() {
                         val yDiff: Int = (event.rawY - initialTouchY).toInt()
                         if (Math.abs(xDiff) > 9 || Math.abs(yDiff) > 9) {
                             layoutParams?.width = floatingView.width + xDiff
+                            if(layoutParams?.width ?: 0 < 150) {
+                                layoutParams?.width = floatingView.width - xDiff //Reverse resize
+                            }
                             initialTouchX = event.rawX
                             initialTouchY = event.rawY
                             mWindowManager?.updateViewLayout(floatingView, layoutParams)
@@ -252,8 +258,10 @@ class FloatingWidgetService : Service() {
     private fun setYoutubePlayerEventsListener() {
         val youTubePlayerListener = object : YouTubePlayerListener {
 
-            override fun onStateChange(youTubePlayer: YouTubePlayer, playerState: PlayerConstants.PlayerState) {
-                if (playerState == PlayerConstants.PlayerState.ENDED) {
+            override fun onStateChange(youTubePlayer: YouTubePlayer, state: PlayerConstants.PlayerState) {
+                println("State changed")
+                if (state == PlayerConstants.PlayerState.ENDED) {
+                    println("State ended")
                     val nextVideoId: String = videosQueue?.getNextVideo() ?: ""
                     youTubePlayer.loadVideo(nextVideoId, 0f)
                 }
@@ -298,11 +306,15 @@ class FloatingWidgetService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val extras = intent?.extras
         if (extras != null) { //Check if widget is started for video to play
-            setWidgetVisibilityToVisible()
-            loadVideoFromExtrasVideoId(extras)
-            createNextVideosQueue(extras)
+            onWidgetStart(extras)
         }
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    private fun onWidgetStart(extras: Bundle) {
+        setWidgetVisibilityToVisible()
+        loadVideoFromExtrasVideoId(extras)
+        createNextVideosQueue(extras)
     }
 
     private fun setWidgetVisibilityToVisible() {
@@ -328,7 +340,26 @@ class FloatingWidgetService : Service() {
 
     private fun createNextVideosQueue(extras: Bundle) {
         val videoId = extras.getString("videoId", "")
-        videosQueue = VideosQueue(videoId, 9)
+        val listId = extras.getString("listId", null)
+        Thread {
+            videosQueue = VideosQueue(videoId, listId, 9)
+        }.start()
+    }
+
+    private fun registerScreenStatusReceiver() {
+        val myScreenReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action.equals(Intent.ACTION_SCREEN_OFF)) {
+                    youTubePlayer?.pause()
+                } else if (intent?.action.equals(Intent.ACTION_USER_PRESENT)) {
+                    youTubePlayer?.play()
+                }
+            }
+        }
+        val filter = IntentFilter()
+        filter.addAction(Intent.ACTION_SCREEN_OFF)
+        filter.addAction(Intent.ACTION_USER_PRESENT)
+        registerReceiver(myScreenReceiver, filter)
     }
 
     override fun onDestroy() {

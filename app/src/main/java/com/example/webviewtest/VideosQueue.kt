@@ -12,7 +12,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.ArrayList
 
-class VideosQueue(private val chosenVideoId: String, private val maxAmountOfVideosInQueue: Int) {
+class VideosQueue(private val chosenVideoId: String, private val listId: String?, private val maxAmountOfVideosInQueue: Int) {
 
     private lateinit var chosenVideoTitle: String
     private val apiKeysArray =
@@ -31,20 +31,34 @@ class VideosQueue(private val chosenVideoId: String, private val maxAmountOfVide
     }
 
     private fun createVideoQueue() {
+        if(listId == null) {
+            createListFromVideoTitle()
+        } else {
+            createListFromListId()
+        }
+    }
+
+    private fun createListFromListId() {
+        videoIdsInQueue = getVideosIdsFromListId(listId!!)
+    }
+
+    private fun createListFromVideoTitle() {
         chosenVideoTitle = getChosenVideoTitle(chosenVideoId)
         val query = createQueryFromTitle()
-        videoIdsInQueue = getVideosIdFromQuery(query)
+        println("query is $query")
+        videoIdsInQueue = getVideosIdsFromQuery(query)
         videoIdsInQueue.add(0, chosenVideoId)
     }
 
     private fun getChosenVideoTitle(chosenVideoId: String): String {
-        val videoInformationObject = getVideoInformationObject(chosenVideoId, 1)
+        val videoInformationObject = getVideoInformationObject(videoId = chosenVideoId, maxResults = 1)
 
         return videoInformationObject?.getJSONArray("items")?.getJSONObject(0)?.getJSONObject("snippet")?.getString("title")
             ?: ""
     }
 
     private fun createQueryFromTitle(): String {
+        chosenVideoTitle.replace("|", "")
         return if (chosenVideoTitle.length > 15) {
             chosenVideoTitle.substring(0 until 15)
         } else {
@@ -52,13 +66,48 @@ class VideosQueue(private val chosenVideoId: String, private val maxAmountOfVide
         }
     }
 
-    private fun getVideoInformationObject(videoId: String, maxResults: Int = maxAmountOfVideosInQueue): JSONObject? {
+    private fun getVideosIdsFromListId(listId: String): MutableList<String> {
+        val videoInformationObject = getVideoInformationObject(listId = listId)
+        val videoInformationArray = videoInformationObject?.getJSONArray("items")
+        val videoIdsList: MutableList<String> = ArrayList()
+        for (i in 0 until (videoInformationArray?.length() ?: 0)) {
+            val id: String =
+                videoInformationArray?.getJSONObject(i)?.getJSONObject("contentDetails")?.getString("videoId") ?: ""
+
+            val title: String = videoInformationArray?.getJSONObject(i)?.getJSONObject("snippet")?.getString("title") ?: ""
+            println("Video title is $title")
+
+            videoIdsList.add(id)
+        }
+        return videoIdsList
+    }
+
+    private fun getVideosIdsFromQuery(query: String): MutableList<String> {
+        val videoInformationObject = getVideoInformationObject(videoId = query)
+        val videoInformationArray = videoInformationObject?.getJSONArray("items")
+        val videoIdsList: MutableList<String> = ArrayList()
+        for (i in 0 until (videoInformationArray?.length() ?: 0)) {
+            val id: String =
+                videoInformationArray?.getJSONObject(i)?.getJSONObject("id")?.getString("videoId") ?: ""
+            val title: String = videoInformationArray?.getJSONObject(i)?.getJSONObject("snippet")?.getString("title") ?: ""
+
+            println("Video title is $title")
+            videoIdsList.add(id)
+        }
+        return videoIdsList
+    }
+
+    private fun getVideoInformationObject(videoId: String = "", maxResults: Int = maxAmountOfVideosInQueue, listId: String? = null): JSONObject? {
         var videoInformationObject: JSONObject? = null
         var availableSpareAPIKeys = true
 
         while (availableSpareAPIKeys) {
 
-            val connection = createConnectionWithQuery(videoId, maxResults)
+            val connection: HttpURLConnection? = if(listId == null) {
+                createConnectionWithQuery(videoId, maxResults)
+            } else {
+                createConnectionWithListId(listId, maxResults)
+            }
 
             if (connection?.responseCode == HttpURLConnection.HTTP_OK) {
                 videoInformationObject = createJSONObjectFromConnectionInputStream(connection)
@@ -77,6 +126,23 @@ class VideosQueue(private val chosenVideoId: String, private val maxAmountOfVide
                 "https://www.googleapis.com/youtube/v3/search?part=snippet&q=" +
                         searchQuery + "&maxResults=" + maxResults + "&type=video&key=" + apiKey
             )
+            connection = url.openConnection() as HttpURLConnection
+            connection.connect()
+            return connection
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return null
+    }
+
+    private fun createConnectionWithListId(listId: String, maxResults: Int): HttpURLConnection? {
+        try {
+            val connection: HttpURLConnection
+            val url = URL("https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet &playlistId=" +
+                        listId + "&maxResults=" + maxResults + "&key=" + apiKey
+            )
+            println("url: " + "https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=" +
+                    listId + "&maxResults=" + maxResults + "&key=" + apiKey)
             connection = url.openConnection() as HttpURLConnection
             connection.connect()
             return connection
@@ -126,20 +192,8 @@ class VideosQueue(private val chosenVideoId: String, private val maxAmountOfVide
         Log.d("AppInfo", "Changed key to $currentAPIKEY")
     }
 
-    private fun getVideosIdFromQuery(query: String): MutableList<String> {
-        val videoInformationObject = getVideoInformationObject(query)
-        val videoInformationArray = videoInformationObject?.getJSONArray("items")
-        val videoIdsList: MutableList<String> = ArrayList()
-        for (i in 0 until (videoInformationArray?.length() ?: 0)) {
-            val id: String =
-                videoInformationArray?.getJSONObject(i)?.getJSONObject("id")?.getString("videoId") ?: ""
-            videoIdsList.add(id)
-        }
-        return videoIdsList
-    }
-
     fun getNextVideo(): String {
-        if (isNowPlayingLastVideoInQueue()) {
+        if (isNowPlayingLastVideoInQueue() && !isVideoQueueEmpty()) {
             currentVideoPlaying = 0
         } else {
             currentVideoPlaying++
@@ -147,5 +201,7 @@ class VideosQueue(private val chosenVideoId: String, private val maxAmountOfVide
         return videoIdsInQueue[currentVideoPlaying]
     }
 
-    private fun isNowPlayingLastVideoInQueue() = currentVideoPlaying + 1 >= videoIdsInQueue.size
+    private fun isNowPlayingLastVideoInQueue() = currentVideoPlaying + 1 == videoIdsInQueue.size
+
+    private fun isVideoQueueEmpty() = videoIdsInQueue.size == 0
 }

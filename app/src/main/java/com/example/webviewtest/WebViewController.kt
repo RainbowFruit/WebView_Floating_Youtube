@@ -7,13 +7,13 @@ import android.webkit.*
 import android.widget.Toast
 import android.os.Looper
 import java.lang.Exception
+import java.util.*
 
 
 class WebViewController(private val context: Context, private val webView: WebView) : WebViewClient() {
 
     private var oldUrl: String = ""
     private var floatingPlayerServiceIntent: Intent? = null
-
 
     override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
         view?.loadUrl(url)
@@ -28,8 +28,7 @@ class WebViewController(private val context: Context, private val webView: WebVi
 
             if (oldUrl != currentUrl) {
                 println("url changed from $oldUrl to $currentUrl, url: $url, videoId: ${getVideoId(currentUrl)}")
-                playVideo(getVideoId(currentUrl))
-                oldUrl = currentUrl
+                switchVideo(currentUrl)
             }
         }
         return super.shouldInterceptRequest(view, url)
@@ -37,10 +36,28 @@ class WebViewController(private val context: Context, private val webView: WebVi
 
     private fun clearUrl(currentUrl: String): String {
         var clearedUrl: String = currentUrl
-        if(currentUrl.contains("#searching")) {
+        if (currentUrl.contains("#searching")) {
             clearedUrl = currentUrl.replace("#searching", "")
         }
         return clearedUrl
+    }
+
+    private fun switchVideo(currentUrl: String) {
+        if (currentUrl.contains("list")) {
+            val listId: String? = getListId(currentUrl)
+            playVideo(getVideoId(currentUrl), getListId(currentUrl))
+        }
+        oldUrl = currentUrl
+    }
+
+    private fun getListId(currentUrl: String): String? {
+        return if (currentUrl.contains("list")) {
+            val tempString: List<String> = currentUrl.split("&")
+            tempString.filter { it.contains("list") }[0]
+                .replace("list=", "")
+        } else {
+            null
+        }
     }
 
     private fun showToast(text: String) {
@@ -63,10 +80,11 @@ class WebViewController(private val context: Context, private val webView: WebVi
         }
     }
 
-    private fun playVideo(videoId: String) {
-        if(videoId != "") {
+    private fun playVideo(videoId: String, listId: String?) {
+        if (videoId != "") {
             floatingPlayerServiceIntent = Intent(context, FloatingWidgetService::class.java)
             floatingPlayerServiceIntent?.putExtra("videoId", videoId)
+            floatingPlayerServiceIntent?.putExtra("listId", listId)
             context.startService(floatingPlayerServiceIntent)
         }
     }
