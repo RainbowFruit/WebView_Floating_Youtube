@@ -6,11 +6,20 @@ import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.view.KeyEvent
+import android.view.View
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import kotlinx.android.synthetic.main.activity_main.*
+import java.io.BufferedReader
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceResponse
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -33,10 +42,82 @@ class MainActivity : AppCompatActivity() {
     private fun manageWebView() {
         myWebView.webViewClient = WebViewController(this, myWebView)
         myWebView.settings.javaScriptEnabled = true
-        myWebView.loadDataWithBaseURL(
-            "https://www.youtube.com/player_api", ConstantStrings.getVideoHTML(),
-            "text/html", null, null
-        )
+        myWebView.webChromeClient = WebChromeClient()
+
+       // myWebView.loadUrl("file:///android_asset/script.html")
+
+        myWebView.webViewClient = object : WebViewClient() {
+
+            var oldUrl: String = ""
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url);
+                //injectJS()
+                //makeToast("injected js")
+            }
+
+            override fun shouldInterceptRequest(view: WebView, url: String?): WebResourceResponse? {
+                val handler = Handler(Looper.getMainLooper())
+                handler.post {
+                    var currentUrl: String = view.url ?: ""
+                    currentUrl = clearUrl(currentUrl)
+
+                    if (oldUrl != currentUrl) {
+                        println("url changed from $oldUrl to $currentUrl, url: $url, videoId: ${getVideoId(currentUrl)}")
+                        oldUrl = currentUrl
+                        injectJS()
+                        makeToast("injected js")
+                    }
+                    //injectJS()
+                    //makeToast("injected js")
+                    //view.loadUrl("javascript:stopVideo();")
+                }
+                return super.shouldInterceptRequest(view, url)
+            }
+
+            private fun getVideoId(url: String): String {
+                return try {
+                    if (url.contains("watch")) {
+                        url.split("&")[0].substring(30)
+                    } else {
+                        ""
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    ""
+                }
+            }
+
+            private fun clearUrl(currentUrl: String): String {
+                var clearedUrl: String = currentUrl
+                if (currentUrl.contains("#searching")) {
+                    clearedUrl = currentUrl.replace("#searching", "")
+                }
+                return clearedUrl
+            }
+        }
+        myWebView.loadUrl("http://www.youtube.com")
+    }
+
+    public fun plsWorkClick(v: View) {
+        injectJS()
+        makeToast("injected js")
+    }
+
+    private fun injectJS() {
+        try {
+            println("before opening")
+            try {
+                val inputStream = assets.open("style.js")
+
+                println("inputStream: " + inputStream.toString())
+                inputStream.bufferedReader().use(BufferedReader::readText)
+            } catch (p: java.lang.Exception) {
+                p.printStackTrace()
+            }
+        } catch (e: Exception) {
+            null
+        }?.let { myWebView.loadUrl("javascript:($it)()")  }
     }
 
     private fun startWidget() {

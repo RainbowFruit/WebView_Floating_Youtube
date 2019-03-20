@@ -30,6 +30,7 @@ class WebViewController(private val context: Context, private val webView: WebVi
                 println("url changed from $oldUrl to $currentUrl, url: $url, videoId: ${getVideoId(currentUrl)}")
                 switchVideo(currentUrl)
             }
+            view?.loadUrl("javascript:stopVideo();")
         }
         return super.shouldInterceptRequest(view, url)
     }

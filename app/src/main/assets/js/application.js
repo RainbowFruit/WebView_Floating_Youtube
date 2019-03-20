@@ -1,23 +1,14 @@
-<!DOCTYPE html>
-<html>
-<body>
-<div id="player"></div>
-<script>
-   var tag = document.createElement('script');
-   tag.src = "https://www.youtube.com/iframe_api";
-   var firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-   var player;
+var player;
    function onYouTubeIframeAPIReady() {
      player = new YT.Player('player', {
                     height: '150',
                        width: '300',
-                       videoId: 'EW5w684bYFw',
                        events: {
                          'onReady': onPlayerReady,
                          'onStateChange': onPlayerStateChange
                        }
               });
+              alert('ready');
    }
 
    function onPlayerReady(event) {
@@ -35,5 +26,7 @@
    function stopVideo() {
      player.stopVideo();
    }
- </script>
-</body>
+
+   function test() {
+    alert('im here')
+   }
