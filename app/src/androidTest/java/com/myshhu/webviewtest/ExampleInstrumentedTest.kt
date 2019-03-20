@@ -1,4 +1,4 @@
-package com.myshhutest.webviewtest
+package com.myshhu.webviewtest
 
 import androidx.test.InstrumentationRegistry
 import androidx.test.runner.AndroidJUnit4

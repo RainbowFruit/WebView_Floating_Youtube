@@ -1,4 +1,4 @@
-package com.myshhutest.webviewtest
+package com.myshhu.webviewtest
 
 import android.app.AlertDialog
 import android.content.Intent

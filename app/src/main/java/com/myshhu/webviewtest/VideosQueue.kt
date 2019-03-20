@@ -1,4 +1,4 @@
-package com.myshhutest.webviewtest
+package com.myshhu.webviewtest
 
 import android.content.Context
 import android.os.Handler
@@ -17,8 +17,12 @@ class VideosQueue(private val chosenVideoId: String, private val listId: String?
     private lateinit var chosenVideoTitle: String
     private val apiKeysArray =
         arrayOf(
-            com.myshhutest.webviewtest.APIKEYS.KEY,
-            com.myshhutest.webviewtest.APIKEYS.KEY1
+            com.myshhu.webviewtest.APIKEYS.KEY,
+            com.myshhu.webviewtest.APIKEYS.KEY1,
+            com.myshhu.webviewtest.APIKEYS.KEY2,
+            com.myshhu.webviewtest.APIKEYS.KEY3,
+            com.myshhu.webviewtest.APIKEYS.KEY4
+
         )
     private var currentVideoPlaying: Int = 0
     private lateinit var videoIdsInQueue: MutableList<String>
