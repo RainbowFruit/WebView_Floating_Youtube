@@ -33,7 +33,10 @@ class MainActivity : AppCompatActivity() {
     private fun manageWebView() {
         myWebView.webViewClient = WebViewController(this, myWebView)
         myWebView.settings.javaScriptEnabled = true
-        myWebView.loadUrl("http://www.youtube.com")
+        myWebView.loadDataWithBaseURL(
+            "https://www.youtube.com/player_api", ConstantStrings.getVideoHTML(),
+            "text/html", null, null
+        )
     }
 
     private fun startWidget() {
