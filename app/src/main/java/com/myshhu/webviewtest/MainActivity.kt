@@ -72,7 +72,7 @@ class MainActivity : AppCompatActivity() {
 
 
         myWebView.loadDataWithBaseURL("https://www.youtube.com",
-            htmlPage, "text/html", "utf-8", null)
+            htmlPage, "text/javascript", "utf-8", null)
 
         myWebView.webViewClient = object : WebViewClient() {
 
