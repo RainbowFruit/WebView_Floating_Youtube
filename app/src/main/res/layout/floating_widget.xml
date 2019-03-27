@@ -45,7 +45,7 @@
                 android:layout_height="30dp"
                 android:layout_weight="5"
                 android:maxLines="1"
-                android:background="@drawable/btnmoveshape"
+                android:background="@drawable/btngotoplayershape"
                 android:text="Player" />
 
         <Button
@@ -54,7 +54,7 @@
                 android:layout_height="30dp"
                 android:layout_weight="10"
                 android:maxLines="1"
-                android:background="#3D3C3C"
+                android:background="@color/colorPrimary"
                 android:text="Move" />
 
         <ImageButton
