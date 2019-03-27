@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <script src="https://www.youtube.com/iframe_api"></script>
+    </head>
+
+    <body>
+    </body>
+
+    <script type="text/javascript">
+
+    function doYT(){
+        window.player = new YT.Player('video_player', {
+            width: '768',
+            height: '432',
+            videoId: vidID,
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange
+            }
+        }
+    }
+
+    window.YT && doYT() || function(){
+        var a=document.createElement("script");
+        a.setAttribute("type","text/javascript");
+        a.setAttribute("src","http://www.youtube.com/player_api");
+        a.onload=doYT;
+        a.onreadystatechange=function(){
+            if (this.readyState=="complete"||this.readyState=="loaded") doYT()
+        };
+        (document.getElementsByTagName("head")[0]||document.documentElement).appendChild(a)
+    }();
+
+    	var player;
+    	function onYouTubeIframeAPIReady() {
+
+            alert('player ready');
+    		player = new YT.Player('player');
+    	}
+
+        // JAVA to WEB functions
+
+        function seekTo(startSeconds) {        	
+        	player.seekTo(startSeconds, true);
+        }
+
+        function pauseVideo() {
+        	player.pauseVideo();
+        }
+
+        function playVideo() {
+        	player.playVideo();
+        }
+
+        function test() {
+            alert('test alert');
+        }
+
+    </script>
+</html>
