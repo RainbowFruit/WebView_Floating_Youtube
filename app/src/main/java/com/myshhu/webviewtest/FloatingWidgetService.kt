@@ -244,7 +244,7 @@ class FloatingWidgetService : Service() {
     private fun setButtonGoToPlayerOnClickListener() {
         val btnGoToPlayer: Button = floatingView.findViewById(R.id.btnGoToPlayer)
         btnGoToPlayer.setOnClickListener {
-            startActivity(ActivityHolder.activity?.intent?.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
+            startActivity(ActivityHolder.activity?.intent?.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
     }
 

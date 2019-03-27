@@ -57,8 +57,13 @@ class VideosQueue(private val chosenVideoId: String, private val listId: String?
     private fun getChosenVideoTitle(chosenVideoId: String): String {
         val videoInformationObject = getVideoInformationObject(videoId = chosenVideoId, maxResults = 1)
 
-        return videoInformationObject?.getJSONArray("items")?.getJSONObject(0)?.getJSONObject("snippet")?.getString("title")
-            ?: ""
+        return try {
+            videoInformationObject?.getJSONArray("items")?.getJSONObject(0)?.getJSONObject("snippet")?.getString("title")
+                ?: ""
+        } catch (e: Exception) {
+            e.printStackTrace()
+            ""
+        }
     }
 
     private fun createQueryFromTitle(): String {
