@@ -8,10 +8,6 @@
         android:orientation="vertical"
         tools:context=".MainActivity">
 
-    <Button android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:text="plsWork"
-    android:onClick="plsWorkClick"/>
-
     <WebView
             android:id="@+id/myWebView"
             android:layout_width="match_parent"
